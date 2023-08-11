@@ -98,14 +98,14 @@ public class Robot extends TimedRobot {
    }
 
    public void dashboardUpdate(){
-    SmartDashboard.putNumber("front right position", m_swerve.m_frontRight.m_turningMotor.getSelectedSensorPosition());
+    SmartDashboard.putNumber("front right position", m_swerve.m_frontRight.getTurningMotorPosition());
     SmartDashboard.putNumber("front left velocity", m_swerve.m_frontLeft.m_driveMotor.getSelectedSensorVelocity() );
-    SmartDashboard.putNumber("front left position", m_swerve.m_frontLeft.m_turningMotor.getSelectedSensorPosition());
+    SmartDashboard.putNumber("front left position", m_swerve.m_frontLeft.getTurningMotorPosition());
     SmartDashboard.putNumber("back left velocity", m_swerve.m_backLeft.m_driveMotor.getSelectedSensorVelocity() );
-    SmartDashboard.putNumber("back left position", m_swerve.m_backLeft.m_turningMotor.getSelectedSensorPosition());
+    SmartDashboard.putNumber("back left position", m_swerve.m_backLeft.getTurningMotorPosition());
     SmartDashboard.putNumber("front right velocity", m_swerve.m_frontRight.m_driveMotor.getSelectedSensorVelocity() );
     SmartDashboard.putNumber("back right velocity", m_swerve.m_backRight.m_driveMotor.getSelectedSensorVelocity() );
-    SmartDashboard.putNumber("back right position", m_swerve.m_backRight.m_turningMotor.getSelectedSensorPosition());
+    SmartDashboard.putNumber("back right position", m_swerve.m_backRight.getTurningMotorPosition());
 
    }
 

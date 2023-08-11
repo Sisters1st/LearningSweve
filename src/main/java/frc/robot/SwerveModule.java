@@ -42,6 +42,13 @@ public class SwerveModule {
   private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 0.5);
   private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
 
+  private final double rawTickToDegreesRatio = 360/1656.666;
+  private final double rawAnalogToDegreesRatio = 360/1024;
+  public double initQuadPosition = -1;
+  public double initAnalogPos = -1;
+  public double analogOffsetDeg = -1;
+
+
   /**
    * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
    *
@@ -65,7 +72,7 @@ public class SwerveModule {
   public SwerveModuleState getState() {
    
     return new SwerveModuleState(
-        m_driveMotor.getSelectedSensorVelocity(), new Rotation2d(m_turningMotor.getSelectedSensorPosition()));
+        m_driveMotor.getSelectedSensorVelocity(), new Rotation2d(this.getTurningMotorPosition()));
   }
 
   /**
@@ -75,7 +82,7 @@ public class SwerveModule {
    */
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(
-        m_driveMotor.getSelectedSensorPosition(), new Rotation2d(m_turningMotor.getSelectedSensorPosition()));
+        m_driveMotor.getSelectedSensorPosition(), new Rotation2d(this.getTurningMotorPosition()));
   }
 
   /**
@@ -86,7 +93,7 @@ public class SwerveModule {
   public void setDesiredState(SwerveModuleState desiredState) {
     // Optimize the reference state to avoid spinning further than 90 degrees
     SwerveModuleState state =
-        SwerveModuleState.optimize(desiredState, new Rotation2d(m_turningMotor.getSelectedSensorPosition()));
+        SwerveModuleState.optimize(desiredState, new Rotation2d(this.getTurningMotorPosition()));
 
     // Calculate the drive output from the drive PID controller.
     final double driveOutput =
@@ -96,12 +103,20 @@ public class SwerveModule {
 
     // Calculate the turning motor output from the turning PID controller.
     final double turnOutput =
-        m_turningPIDController.calculate(m_turningMotor.getSelectedSensorPosition(), state.angle.getRadians());
+        m_turningPIDController.calculate(this.getTurningMotorPosition(), state.angle.getRadians());
 
     final double turnFeedforward =
         m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
     m_driveMotor.set(ControlMode.PercentOutput, driveOutput + driveFeedforward);
     m_turningMotor.set(ControlMode.PercentOutput, turnOutput + turnFeedforward);
+  }
+
+  public double getTurningMotorPosition(){
+    double rawPos = m_turningMotor.getSelectedSensorPosition() + initQuadPosition;
+    double _0to360 = rawPos * rawTickToDegreesRatio + analogOffsetDeg;
+    double ret = _0to360 % 360 - 180;
+    return ret;
+    
   }
 }
