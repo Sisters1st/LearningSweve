@@ -4,14 +4,16 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.kauailabs.navx.frc.AHRS;
-
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.Timer;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
@@ -23,19 +25,10 @@ public class Drivetrain {
   private final Translation2d m_backLeftLocation = new Translation2d(-0.381, 0.381);
   private final Translation2d m_backRightLocation = new Translation2d(-0.381, -0.381);
 
-  private final SwerveModule m_frontLeft;
-  private final SwerveModule m_frontRight;
-  private final SwerveModule m_backLeft;
-  private final SwerveModule m_backRight;
-
-  TalonSRX frontLeftDrive; // creates a new TalonSRX with ID 0
-  TalonSRX frontLeftTurn;
-  TalonSRX backLeftDrive;
-  TalonSRX backLeftTurn;
-  TalonSRX frontRightDrive;
-  TalonSRX frontRightTurn;
-  TalonSRX backRightDrive;
-  TalonSRX backRightTurn;
+  public final SwerveModule m_frontLeft = new SwerveModule(4, 7);
+  public final SwerveModule m_frontRight = new SwerveModule(1, 5);
+  public final SwerveModule m_backLeft = new SwerveModule(2, 6);
+  public final SwerveModule m_backRight = new SwerveModule(3, 8);
 
   private final AnalogGyro m_gyro = new AnalogGyro(0);
 
@@ -43,26 +36,24 @@ public class Drivetrain {
       new SwerveDriveKinematics(
           m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
 
-  private final SwerveDriveOdometry m_odometry =
-      new SwerveDriveOdometry(m_kinematics, m_gyro.getRotation2d());
+  /* Here we use SwerveDrivePoseEstimator so that we can fuse odometry readings. The numbers used
+  below are robot specific, and should be tuned. */
+  private final SwerveDrivePoseEstimator m_poseEstimator =
+      new SwerveDrivePoseEstimator(
+          m_kinematics,
+          m_gyro.getRotation2d(),
+          new SwerveModulePosition[] {
+            m_frontLeft.getPosition(),
+            m_frontRight.getPosition(),
+            m_backLeft.getPosition(),
+            m_backRight.getPosition()
+          },
+          new Pose2d(),
+          VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5)),
+          VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
 
-      public Drivetrain(TalonSRX FLD, TalonSRX FLT,
-      TalonSRX BLD, TalonSRX BLT,
-      TalonSRX FRD, TalonSRX FRT,
-      TalonSRX BRD, TalonSRX BRT) {
+  public Drivetrain() {
     m_gyro.reset();
-    frontLeftDrive = FLD;
-    frontLeftTurn = FLT;
-    backLeftDrive = BLD;
-    backLeftTurn = BLT;
-    frontRightDrive = FRD;
-    frontRightTurn = FRT;
-    backRightDrive = BRD;
-    backRightTurn = BRT;
-     m_frontLeft = new SwerveModule (FLD, FLT);
-     m_frontRight = new SwerveModule (FRD, FRT);
-     m_backLeft = new SwerveModule (BLD, BLT);
-     m_backRight = new SwerveModule (BRD, BRT);
   }
 
   /**
@@ -73,12 +64,11 @@ public class Drivetrain {
    * @param rot Angular rate of the robot.
    * @param fieldRelative Whether the provided x and y speeds are relative to the field.
    */
-  @SuppressWarnings("ParameterName")
-  public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative, AHRS ahrs) {
+  public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
     var swerveModuleStates =
         m_kinematics.toSwerveModuleStates(
             fieldRelative
-                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, ahrs.getRotation2d())
+                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.getRotation2d())
                 : new ChassisSpeeds(xSpeed, ySpeed, rot));
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
     m_frontLeft.setDesiredState(swerveModuleStates[0]);
@@ -89,11 +79,20 @@ public class Drivetrain {
 
   /** Updates the field relative position of the robot. */
   public void updateOdometry() {
-    m_odometry.update(
+    m_poseEstimator.update(
         m_gyro.getRotation2d(),
-        m_frontLeft.getState(),
-        m_frontRight.getState(),
-        m_backLeft.getState(),
-        m_backRight.getState());
+        new SwerveModulePosition[] {
+          m_frontLeft.getPosition(),
+          m_frontRight.getPosition(),
+          m_backLeft.getPosition(),
+          m_backRight.getPosition()
+        });
+
+    // Also apply vision measurements. We use 0.3 seconds in the past as an example -- on
+    // a real robot, this must be calculated based either on latency or timestamps.
+    m_poseEstimator.addVisionMeasurement(
+        ExampleGlobalMeasurementSensor.getEstimatedGlobalPose(
+            m_poseEstimator.getEstimatedPosition()),
+        Timer.getFPGATimestamp() - 0.3);
   }
 }

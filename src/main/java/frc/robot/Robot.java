@@ -4,85 +4,31 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import edu.wpi.first.math.MathUtil;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
+
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import com.kauailabs.navx.frc.AHRS;
-import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
 
 public class Robot extends TimedRobot {
   private final XboxController m_controller = new XboxController(0);
-  boolean fieldCentric = false;
-
-  NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
-  NetworkTableEntry tx = table.getEntry("tx");
-  NetworkTableEntry ty = table.getEntry("ty");
-  NetworkTableEntry ta = table.getEntry("ta");
-
-  //read values periodically
-  double x = tx.getDouble(0.0);
-  double y = ty.getDouble(0.0);
-  double area = ta.getDouble(0.0);
-
+  private final Drivetrain m_swerve = new Drivetrain();
 
   // Slew rate limiters to make joystick inputs more gentle; 1/3 sec from 0 to 1.
   private final SlewRateLimiter m_xspeedLimiter = new SlewRateLimiter(3);
   private final SlewRateLimiter m_yspeedLimiter = new SlewRateLimiter(3);
   private final SlewRateLimiter m_rotLimiter = new SlewRateLimiter(3);
-  
-  public AHRS ahrs;
 
-  TalonSRX frontLeftDrive = new TalonSRX(4); // creates a new TalonSRX with ID 0
-  TalonSRX frontLeftTurn = new TalonSRX(7);
-  TalonSRX backLeftDrive = new TalonSRX(2);
-  TalonSRX backLeftTurn = new TalonSRX(6);
-  TalonSRX frontRightDrive = new TalonSRX(1);
-  TalonSRX frontRightTurn = new TalonSRX(5);
-  TalonSRX backRightDrive = new TalonSRX(3);
-  TalonSRX backRightTurn = new TalonSRX(8);
-  private final Drivetrain m_swerve = new Drivetrain(frontLeftDrive, frontLeftTurn,
-  backLeftDrive, backLeftTurn,
-  frontRightDrive, frontRightTurn,
-  backRightDrive, backRightTurn);
+  private int frontRightPosInit = -1;
+  private int frontLeftPosInit = -1;
+  private int backRightPosInit = -1;
+  private int backLeftPosInit = -1;
 
-  @Override
-  public void robotInit(){
-    backLeftDrive.setInverted(true);
-    frontRightDrive.setInverted(true);
-    frontLeftDrive.setInverted(false);
-    backRightDrive.setInverted(true);
-    ahrs = new AHRS(SPI.Port.kMXP);
-
-  }
-
-  @Override
-  public void robotPeriodic() {
-    SmartDashboard.putNumber("front left velocity", frontLeftDrive.getSelectedSensorVelocity() / 175086);
-    SmartDashboard.putNumber("front left position", frontLeftTurn.getSelectedSensorPosition()*0.00374668175);
-    SmartDashboard.putNumber("back left velocity", backLeftDrive.getSelectedSensorVelocity() / 175086);
-    SmartDashboard.putNumber("back left position", backLeftTurn.getSelectedSensorPosition()*0.00374668175);
-    SmartDashboard.putNumber("front right velocity", frontRightDrive.getSelectedSensorVelocity() / 175086);
-    SmartDashboard.putNumber("front right position", frontRightTurn.getSelectedSensorPosition()*0.00374668175);
-    SmartDashboard.putNumber("back right velocity", backRightDrive.getSelectedSensorVelocity() / 175086);
-    SmartDashboard.putNumber("back right position", backRightTurn.getSelectedSensorPosition()*0.00374668175);
-    SmartDashboard.putNumber("front right drive position", frontRightDrive.getSelectedSensorPosition()*0.00374668175);
-    SmartDashboard.putNumber("back right drive position", backRightDrive.getSelectedSensorPosition()*0.00374668175);
-    SmartDashboard.putNumber("front left drive position", frontLeftDrive.getSelectedSensorPosition()*0.00374668175);
-    SmartDashboard.putNumber("back left drive position", backLeftDrive.getSelectedSensorPosition()*0.00374668175);
-    SmartDashboard.putNumber("current angle", ahrs.getAngle());
-    SmartDashboard.putBoolean("field centric", fieldCentric);
-
-    SmartDashboard.putNumber("LimelightX", x);
-    SmartDashboard.putNumber("LimelightY", y);
-    SmartDashboard.putNumber("LimelightArea", area);
-
-  }
   @Override
   public void autonomousPeriodic() {
     driveWithJoystick(false);
@@ -91,35 +37,125 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    driveWithJoystick(fieldCentric);
-   if(m_controller.getBButtonPressed()){
-      fieldCentric = !fieldCentric;
-   }
+    driveWithJoystick(false);
+    
   }
-
 
   private void driveWithJoystick(boolean fieldRelative) {
     // Get the x speed. We are inverting this because Xbox controllers return
     // negative values when we push forward.
-    final var xSpeed =
-        -m_xspeedLimiter.calculate(MathUtil.applyDeadband(m_controller.getLeftY(), 0.02))
-            * Drivetrain.kMaxSpeed;
+    final var xSpeed = -m_xspeedLimiter.calculate(m_controller.getLeftY()) * Drivetrain.kMaxSpeed;
 
     // Get the y speed or sideways/strafe speed. We are inverting this because
     // we want a positive value when we pull to the left. Xbox controllers
     // return positive values when you pull to the right by default.
-    final var ySpeed =
-        -m_yspeedLimiter.calculate(MathUtil.applyDeadband(m_controller.getLeftX(), 0.02))
-            * Drivetrain.kMaxSpeed;
+    final var ySpeed = -m_yspeedLimiter.calculate(m_controller.getLeftX()) * Drivetrain.kMaxSpeed;
 
     // Get the rate of angular rotation. We are inverting this because we want a
     // positive value when we pull to the left (remember, CCW is positive in
     // mathematics). Xbox controllers return positive values when you pull to
     // the right by default.
-    final var rot =
-        -m_rotLimiter.calculate(MathUtil.applyDeadband(m_controller.getRawAxis(2), 0.02))
-            * Drivetrain.kMaxAngularSpeed;
+    final var rot = -m_rotLimiter.calculate(m_controller.getRightX()) * Drivetrain.kMaxAngularSpeed;
 
-    m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative, ahrs);
+    m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
   }
+
+  @Override
+  public void robotInit(){
+    initMotorControllers();
+  }
+
+  @Override
+  public void robotPeriodic(){
+    //1667 counts per revolution
+    dashboardUpdate();
+    checkRioButtonForCoastMode();
+
+   }
+
+   public void checkRioButtonForCoastMode(){
+    if(RobotController.getUserButton()){
+      m_swerve.m_frontRight.m_turningMotor.setNeutralMode(NeutralMode.Coast);
+      m_swerve.m_backRight.m_turningMotor.setNeutralMode(NeutralMode.Coast);
+      m_swerve.m_frontLeft.m_turningMotor.setNeutralMode(NeutralMode.Coast);
+      m_swerve.m_backLeft.m_turningMotor.setNeutralMode(NeutralMode.Coast);
+  
+      m_swerve.m_frontRight.m_driveMotor.setNeutralMode(NeutralMode.Coast);
+      m_swerve.m_backRight.m_driveMotor.setNeutralMode(NeutralMode.Coast);
+      m_swerve.m_frontLeft.m_driveMotor.setNeutralMode(NeutralMode.Coast);
+      m_swerve.m_backLeft.m_driveMotor.setNeutralMode(NeutralMode.Coast);
+    } else {
+      m_swerve.m_frontRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+      m_swerve.m_backRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+      m_swerve.m_frontLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+      m_swerve.m_backLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+
+      m_swerve.m_frontRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
+      m_swerve.m_backRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
+      m_swerve.m_frontLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
+      m_swerve.m_backLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
+    }
+   }
+
+   public void dashboardUpdate(){
+    SmartDashboard.putNumber("front right position", m_swerve.m_frontRight.m_turningMotor.getSelectedSensorPosition());
+    SmartDashboard.putNumber("front left velocity", m_swerve.m_frontLeft.m_driveMotor.getSelectedSensorVelocity() );
+    SmartDashboard.putNumber("front left position", m_swerve.m_frontLeft.m_turningMotor.getSelectedSensorPosition());
+    SmartDashboard.putNumber("back left velocity", m_swerve.m_backLeft.m_driveMotor.getSelectedSensorVelocity() );
+    SmartDashboard.putNumber("back left position", m_swerve.m_backLeft.m_turningMotor.getSelectedSensorPosition());
+    SmartDashboard.putNumber("front right velocity", m_swerve.m_frontRight.m_driveMotor.getSelectedSensorVelocity() );
+    SmartDashboard.putNumber("back right velocity", m_swerve.m_backRight.m_driveMotor.getSelectedSensorVelocity() );
+    SmartDashboard.putNumber("back right position", m_swerve.m_backRight.m_turningMotor.getSelectedSensorPosition());
+
+   }
+
+   public void initMotorControllers(){
+    m_swerve.m_frontRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+    m_swerve.m_backRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+    m_swerve.m_frontLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+    m_swerve.m_backLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+
+    m_swerve.m_frontRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
+    m_swerve.m_backRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
+    m_swerve.m_frontLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
+    m_swerve.m_backLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
+
+    m_swerve.m_backLeft.m_turningMotor.configFeedbackNotContinuous(true, 0);
+    m_swerve.m_backRight.m_turningMotor.configFeedbackNotContinuous(true, 0);
+    m_swerve.m_frontRight.m_turningMotor.configFeedbackNotContinuous(true, 0);
+    m_swerve.m_frontLeft.m_turningMotor.configFeedbackNotContinuous(true, 0);
+
+    m_swerve.m_frontRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
+    m_swerve.m_frontLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
+    m_swerve.m_backLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
+    m_swerve.m_backRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
+
+    Timer delay = new Timer();
+    delay.reset();
+    delay.start();
+    while(delay.advanceIfElapsed(0.5) == false){
+      //wait
+    }
+    
+    frontLeftPosInit = (int) m_swerve.m_frontLeft.m_turningMotor.getSelectedSensorPosition();
+    frontRightPosInit = (int) m_swerve.m_frontRight.m_turningMotor.getSelectedSensorPosition();
+    backLeftPosInit = (int) m_swerve.m_backLeft.m_turningMotor.getSelectedSensorPosition();
+    backRightPosInit = (int) m_swerve.m_backRight.m_turningMotor.getSelectedSensorPosition();
+
+    SmartDashboard.putNumber("Front Left Analog Init", frontLeftPosInit);
+    SmartDashboard.putNumber("Front Right Analog Init", frontRightPosInit);
+    SmartDashboard.putNumber("Back Left Analog Init", backLeftPosInit);
+    SmartDashboard.putNumber("Back Right Analog Init", backRightPosInit);
+
+    m_swerve.m_frontRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
+    m_swerve.m_frontLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
+    m_swerve.m_backLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
+    m_swerve.m_backRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
+
+    delay.reset();
+    delay.start();
+    while(delay.advanceIfElapsed(0.5) == false){
+      //wait
+    }
+   }
 }
