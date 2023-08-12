@@ -32,7 +32,7 @@ public class SwerveModule {
   // Gains are for example purposes only - must be determined for your own robot!
   private final ProfiledPIDController m_turningPIDController =
       new ProfiledPIDController(
-          .01,
+          .001,
           0,
           0,
           new TrapezoidProfile.Constraints(
@@ -40,10 +40,10 @@ public class SwerveModule {
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 0.5);
-  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
+  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(0.1, 0.05);
 
-  private final double rawTickToDegreesRatio = 360/1656.666;
-  private final double rawAnalogToDegreesRatio = 360/1024;
+  private final double rawTickToDegreesRatio = 360.0/1656.666;
+  public final double rawAnalogToDegreesRatio = 360.0/1024.0;
   public double initQuadPosition = -1;
   public double initAnalogPos = -1;
   public double analogOffsetDeg = -1;
@@ -113,9 +113,9 @@ public class SwerveModule {
   }
 
   public double getTurningMotorPosition(){
-    double rawPos = m_turningMotor.getSelectedSensorPosition() + initQuadPosition;
+    double rawPos = m_turningMotor.getSelectedSensorPosition();
     double _0to360 = rawPos * rawTickToDegreesRatio + analogOffsetDeg;
-    double ret = _0to360 % 360 - 180;
+    double ret = Math.abs(_0to360) % 360 - 180;
     return ret;
     
   }

@@ -4,14 +4,8 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
-
 import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -23,11 +17,6 @@ public class Robot extends TimedRobot {
   private final SlewRateLimiter m_xspeedLimiter = new SlewRateLimiter(3);
   private final SlewRateLimiter m_yspeedLimiter = new SlewRateLimiter(3);
   private final SlewRateLimiter m_rotLimiter = new SlewRateLimiter(3);
-
-  private int frontRightPosInit = -1;
-  private int frontLeftPosInit = -1;
-  private int backRightPosInit = -1;
-  private int backLeftPosInit = -1;
 
   @Override
   public void autonomousPeriodic() {
@@ -62,42 +51,19 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotInit(){
-    initMotorControllers();
   }
 
   @Override
   public void robotPeriodic(){
     //1667 counts per revolution
     dashboardUpdate();
-    checkRioButtonForCoastMode();
+    m_swerve.checkRioButtonForCoastMode();
 
-   }
-
-   public void checkRioButtonForCoastMode(){
-    if(RobotController.getUserButton()){
-      m_swerve.m_frontRight.m_turningMotor.setNeutralMode(NeutralMode.Coast);
-      m_swerve.m_backRight.m_turningMotor.setNeutralMode(NeutralMode.Coast);
-      m_swerve.m_frontLeft.m_turningMotor.setNeutralMode(NeutralMode.Coast);
-      m_swerve.m_backLeft.m_turningMotor.setNeutralMode(NeutralMode.Coast);
-  
-      m_swerve.m_frontRight.m_driveMotor.setNeutralMode(NeutralMode.Coast);
-      m_swerve.m_backRight.m_driveMotor.setNeutralMode(NeutralMode.Coast);
-      m_swerve.m_frontLeft.m_driveMotor.setNeutralMode(NeutralMode.Coast);
-      m_swerve.m_backLeft.m_driveMotor.setNeutralMode(NeutralMode.Coast);
-    } else {
-      m_swerve.m_frontRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-      m_swerve.m_backRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-      m_swerve.m_frontLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-      m_swerve.m_backLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-
-      m_swerve.m_frontRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-      m_swerve.m_backRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-      m_swerve.m_frontLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-      m_swerve.m_backLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-    }
    }
 
    public void dashboardUpdate(){
+    SmartDashboard.putNumber("front right raw pos", m_swerve.m_frontRight.m_turningMotor.getSelectedSensorPosition());
+    SmartDashboard.putNumber("front left raw pos", m_swerve.m_frontLeft.m_turningMotor.getSelectedSensorPosition());
     SmartDashboard.putNumber("front right position", m_swerve.m_frontRight.getTurningMotorPosition());
     SmartDashboard.putNumber("front left velocity", m_swerve.m_frontLeft.m_driveMotor.getSelectedSensorVelocity() );
     SmartDashboard.putNumber("front left position", m_swerve.m_frontLeft.getTurningMotorPosition());
@@ -109,53 +75,5 @@ public class Robot extends TimedRobot {
 
    }
 
-   public void initMotorControllers(){
-    m_swerve.m_frontRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-    m_swerve.m_backRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-    m_swerve.m_frontLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-    m_swerve.m_backLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-
-    m_swerve.m_frontRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-    m_swerve.m_backRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-    m_swerve.m_frontLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-    m_swerve.m_backLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-
-    m_swerve.m_backLeft.m_turningMotor.configFeedbackNotContinuous(true, 0);
-    m_swerve.m_backRight.m_turningMotor.configFeedbackNotContinuous(true, 0);
-    m_swerve.m_frontRight.m_turningMotor.configFeedbackNotContinuous(true, 0);
-    m_swerve.m_frontLeft.m_turningMotor.configFeedbackNotContinuous(true, 0);
-
-    m_swerve.m_frontRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
-    m_swerve.m_frontLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
-    m_swerve.m_backLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
-    m_swerve.m_backRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
-
-    Timer delay = new Timer();
-    delay.reset();
-    delay.start();
-    while(delay.advanceIfElapsed(0.5) == false){
-      //wait
-    }
-    
-    frontLeftPosInit = (int) m_swerve.m_frontLeft.m_turningMotor.getSelectedSensorPosition();
-    frontRightPosInit = (int) m_swerve.m_frontRight.m_turningMotor.getSelectedSensorPosition();
-    backLeftPosInit = (int) m_swerve.m_backLeft.m_turningMotor.getSelectedSensorPosition();
-    backRightPosInit = (int) m_swerve.m_backRight.m_turningMotor.getSelectedSensorPosition();
-
-    SmartDashboard.putNumber("Front Left Analog Init", frontLeftPosInit);
-    SmartDashboard.putNumber("Front Right Analog Init", frontRightPosInit);
-    SmartDashboard.putNumber("Back Left Analog Init", backLeftPosInit);
-    SmartDashboard.putNumber("Back Right Analog Init", backRightPosInit);
-
-    m_swerve.m_frontRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
-    m_swerve.m_frontLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
-    m_swerve.m_backLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
-    m_swerve.m_backRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
-
-    delay.reset();
-    delay.start();
-    while(delay.advanceIfElapsed(0.5) == false){
-      //wait
-    }
-   }
+   
 }
