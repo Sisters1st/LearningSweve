@@ -37,9 +37,9 @@ public class SwerveModule {
   // Gains are for example purposes only - must be determined for your own robot!
   private final ProfiledPIDController m_turningPIDController =
       new ProfiledPIDController(
-          .001,
-          0,
-          0,
+          2,
+          0.001,
+          0.01,
           new TrapezoidProfile.Constraints(
               kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
 
@@ -100,7 +100,8 @@ public class SwerveModule {
   public void setDesiredState(SwerveModuleState desiredState) {
     // Optimize the reference state to avoid spinning further than 90 degrees
     SwerveModuleState state =
-        SwerveModuleState.optimize(desiredState, new Rotation2d(this.getTurningMotorPosition()));
+        SwerveModuleState.optimize(desiredState, new Rotation2d(Math.toRadians(this.getTurningMotorPosition())));
+    SmartDashboard.putNumber(name + "Desired Ang", state.angle.getDegrees());
 
     // Calculate the drive output from the drive PID controller.
     final double driveOutput =
@@ -110,20 +111,20 @@ public class SwerveModule {
 
     // Calculate the turning motor output from the turning PID controller.
     final double turnOutput =
-        m_turningPIDController.calculate(this.getTurningMotorPosition(), state.angle.getRadians());
+        m_turningPIDController.calculate(Math.toRadians(this.getTurningMotorPosition()), state.angle.getRadians());
 
     final double turnFeedforward =
         m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
     m_driveMotor.set(ControlMode.PercentOutput, driveOutput + driveFeedforward);
-    m_turningMotor.set(ControlMode.PercentOutput, turnOutput + turnFeedforward);
+    m_turningMotor.set(ControlMode.PercentOutput, (turnOutput));// + turnFeedforward));
   }
 
   public double getTurningMotorPosition(){
     double rawPos = -m_turningMotor.getSelectedSensorPosition();
     double _0to360 = (rawPos - initQuadPosition) * rawTickToDegreesRatio + analogOffsetDeg;
     double ret = _0to360 - 360 * Math.floor(_0to360 / 360) - 180;
-    return ret;
+    return -ret;
     
   }
 

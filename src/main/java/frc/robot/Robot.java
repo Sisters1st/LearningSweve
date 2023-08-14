@@ -44,9 +44,9 @@ public class Robot extends TimedRobot {
     // mathematics). Xbox controllers return positive values when you pull to
     // the right by default.
     final var rot = -m_rotLimiter.calculate(m_controller.getRightX()) * Drivetrain.kMaxAngularSpeed;
-    m_swerve.drive(0, 0.1, 0, false);
+    //m_swerve.drive(.1, 0.1, 0, false);
   
-    //m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
+    m_swerve.drive(0, 1, rot, fieldRelative);
   }
 
   @Override
