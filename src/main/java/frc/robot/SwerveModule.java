@@ -5,6 +5,8 @@
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import edu.wpi.first.math.controller.PIDController;
@@ -14,6 +16,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class SwerveModule {
   //private static final double kWheelRadius = 0.0508;
@@ -47,6 +52,8 @@ public class SwerveModule {
   public double initQuadPosition = -1;
   public double initAnalogPos = -1;
   public double analogOffsetDeg = -1;
+  public String name = "noName";
+  public double turnOffset = -1;
 
 
   /**
@@ -113,10 +120,55 @@ public class SwerveModule {
   }
 
   public double getTurningMotorPosition(){
-    double rawPos = m_turningMotor.getSelectedSensorPosition();
-    double _0to360 = rawPos * rawTickToDegreesRatio + analogOffsetDeg;
-    double ret = Math.abs(_0to360) % 360 - 180;
+    double rawPos = -m_turningMotor.getSelectedSensorPosition();
+    double _0to360 = (rawPos - initQuadPosition) * rawTickToDegreesRatio + analogOffsetDeg;
+    double ret = _0to360 - 360 * Math.floor(_0to360 / 360) - 180;
     return ret;
     
+  }
+
+  public void initModule(){
+    m_turningMotor.setNeutralMode(NeutralMode.Brake);
+    m_driveMotor.setNeutralMode(NeutralMode.Brake);
+    m_turningMotor.configFeedbackNotContinuous(true, 0);
+    m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
+    Timer delay = new Timer();
+    delay.reset();
+    delay.start();
+    while(delay.advanceIfElapsed(0.1) == false){
+      //wait
+    }
+
+    initAnalogPos = m_turningMotor.getSelectedSensorPosition();
+    SmartDashboard.putNumber(name + " Analog Init", initAnalogPos);
+    m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
+
+    delay.reset();
+    delay.start();
+    while(delay.advanceIfElapsed(0.1) == false){
+      //wait
+    }
+
+    initQuadPosition = -m_turningMotor.getSelectedSensorPosition();
+    SmartDashboard.putNumber(name + " Init Quad", initQuadPosition);
+
+    analogOffsetDeg = (initAnalogPos * rawAnalogToDegreesRatio) + turnOffset;
+    SmartDashboard.putNumber(name + " Analog Deg", analogOffsetDeg);
+  }
+
+  public void checkUserButton(){
+    if(!RobotController.getUserButton()){
+      m_turningMotor.setNeutralMode(NeutralMode.Coast);
+      m_driveMotor.setNeutralMode(NeutralMode.Coast);
+    } else {
+      m_turningMotor.setNeutralMode(NeutralMode.Brake);
+      m_driveMotor.setNeutralMode(NeutralMode.Brake);
+    }
+  }
+
+  public void updateSmartDashboard(){
+    SmartDashboard.putNumber(name + "Raw Pos", m_turningMotor.getSelectedSensorPosition());
+    SmartDashboard.putNumber(name + "Calculated Pos", getTurningMotorPosition());
+    SmartDashboard.putNumber(name + "Raw Velocity",m_driveMotor.getSelectedSensorVelocity());
   }
 }

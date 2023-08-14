@@ -7,7 +7,6 @@ package frc.robot;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Robot extends TimedRobot {
   private final XboxController m_controller = new XboxController(0);
@@ -45,8 +44,9 @@ public class Robot extends TimedRobot {
     // mathematics). Xbox controllers return positive values when you pull to
     // the right by default.
     final var rot = -m_rotLimiter.calculate(m_controller.getRightX()) * Drivetrain.kMaxAngularSpeed;
-
-    m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
+    m_swerve.drive(0, 0.1, 0, false);
+  
+    //m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
   }
 
   @Override
@@ -62,17 +62,7 @@ public class Robot extends TimedRobot {
    }
 
    public void dashboardUpdate(){
-    SmartDashboard.putNumber("front right raw pos", m_swerve.m_frontRight.m_turningMotor.getSelectedSensorPosition());
-    SmartDashboard.putNumber("front left raw pos", m_swerve.m_frontLeft.m_turningMotor.getSelectedSensorPosition());
-    SmartDashboard.putNumber("front right position", m_swerve.m_frontRight.getTurningMotorPosition());
-    SmartDashboard.putNumber("front left velocity", m_swerve.m_frontLeft.m_driveMotor.getSelectedSensorVelocity() );
-    SmartDashboard.putNumber("front left position", m_swerve.m_frontLeft.getTurningMotorPosition());
-    SmartDashboard.putNumber("back left velocity", m_swerve.m_backLeft.m_driveMotor.getSelectedSensorVelocity() );
-    SmartDashboard.putNumber("back left position", m_swerve.m_backLeft.getTurningMotorPosition());
-    SmartDashboard.putNumber("front right velocity", m_swerve.m_frontRight.m_driveMotor.getSelectedSensorVelocity() );
-    SmartDashboard.putNumber("back right velocity", m_swerve.m_backRight.m_driveMotor.getSelectedSensorVelocity() );
-    SmartDashboard.putNumber("back right position", m_swerve.m_backRight.getTurningMotorPosition());
-
+    m_swerve.updateDashboard();
    }
 
    

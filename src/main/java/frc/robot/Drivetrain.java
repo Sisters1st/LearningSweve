@@ -4,9 +4,6 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -16,9 +13,6 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogGyro;
-import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
@@ -78,6 +72,7 @@ public class Drivetrain {
                 ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.getRotation2d())
                 : new ChassisSpeeds(xSpeed, ySpeed, rot));
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
+    System.out.println(xSpeed + ":" + ySpeed + ":" + rot);
     m_frontLeft.setDesiredState(swerveModuleStates[0]);
     m_frontRight.setDesiredState(swerveModuleStates[1]);
     m_backLeft.setDesiredState(swerveModuleStates[2]);
@@ -97,94 +92,41 @@ public class Drivetrain {
 
     // Also apply vision measurements. We use 0.3 seconds in the past as an example -- on
     // a real robot, this must be calculated based either on latency or timestamps.
-    m_poseEstimator.addVisionMeasurement(
-        ExampleGlobalMeasurementSensor.getEstimatedGlobalPose(
-            m_poseEstimator.getEstimatedPosition()),
-        Timer.getFPGATimestamp() - 0.3);
+    //m_poseEstimator.addVisionMeasurement(
+     //   ExampleGlobalMeasurementSensor.getEstimatedGlobalPose(
+      //      m_poseEstimator.getEstimatedPosition()),
+      //  Timer.getFPGATimestamp() - 0.3);
   }
 
   public void initModules(){
-    m_frontRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-    m_backRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-    m_frontLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-    m_backLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+    m_frontLeft.name = "FrontLeft";
+    m_frontRight.name = "FrontRight";
+    m_backLeft.name = "BackLeft";
+    m_backRight.name = "BackRight";
 
-    m_frontRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-    m_backRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-    m_frontLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-    m_backLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
+    m_frontRight.turnOffset = -48;
+    m_frontLeft.turnOffset = -54;
+    m_backLeft.turnOffset = -122;
+    m_backRight.turnOffset = 111;
 
-    m_backLeft.m_turningMotor.configFeedbackNotContinuous(true, 0);
-    m_backRight.m_turningMotor.configFeedbackNotContinuous(true, 0);
-    m_frontRight.m_turningMotor.configFeedbackNotContinuous(true, 0);
-    m_frontLeft.m_turningMotor.configFeedbackNotContinuous(true, 0);
-
-    m_frontRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
-    m_frontLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
-    m_backLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
-    m_backRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.Analog,0,0);
-
-    Timer delay = new Timer();
-    delay.reset();
-    delay.start();
-    while(delay.advanceIfElapsed(0.5) == false){
-      //wait
-    }
-    
-    m_frontLeft.initAnalogPos = m_frontLeft.m_turningMotor.getSelectedSensorPosition();
-    m_frontRight.initAnalogPos = m_frontRight.m_turningMotor.getSelectedSensorPosition();
-    m_backLeft.initAnalogPos = m_backLeft.m_turningMotor.getSelectedSensorPosition();
-    m_backRight.initAnalogPos = m_backRight.m_turningMotor.getSelectedSensorPosition();
-
-    SmartDashboard.putNumber("Front Left Analog Init", m_frontLeft.initAnalogPos);
-    SmartDashboard.putNumber("Front Right Analog Init", m_frontRight.initAnalogPos);
-    SmartDashboard.putNumber("Back Left Analog Init", m_backLeft.initAnalogPos);
-    SmartDashboard.putNumber("Back Right Analog Init", m_backRight.initAnalogPos);
-
-    m_frontRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
-    m_frontLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
-    m_backLeft.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
-    m_backRight.m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder,0,0);
-
-    delay.reset();
-    delay.start();
-    while(delay.advanceIfElapsed(0.5) == false){
-      //wait
-    }
-    
-    m_frontLeft.analogOffsetDeg = m_frontLeft.initAnalogPos * m_frontLeft.rawAnalogToDegreesRatio;
-    m_frontRight.analogOffsetDeg = m_frontRight.initAnalogPos * m_frontRight.rawAnalogToDegreesRatio;
-    m_backLeft.analogOffsetDeg = m_backLeft.initAnalogPos * m_backLeft.rawAnalogToDegreesRatio;
-    m_backRight.analogOffsetDeg = m_backRight.initAnalogPos * m_backRight.rawAnalogToDegreesRatio;
-
-    SmartDashboard.putNumber("Front Left Analog Deg", m_frontLeft.analogOffsetDeg);
-    SmartDashboard.putNumber("Front Right Analog Deg", m_frontRight.analogOffsetDeg);
-    SmartDashboard.putNumber("Back Left Analog Deg", m_backLeft.analogOffsetDeg);
-    SmartDashboard.putNumber("Back Right Analog Deg", m_backRight.analogOffsetDeg);
+    m_frontRight.initModule();
+    m_backRight.initModule();
+    m_frontLeft.initModule();
+    m_backLeft.initModule();
    }
 
    public void checkRioButtonForCoastMode(){
-    if(!RobotController.getUserButton()){
-      m_frontRight.m_turningMotor.setNeutralMode(NeutralMode.Coast);
-      m_backRight.m_turningMotor.setNeutralMode(NeutralMode.Coast);
-      m_frontLeft.m_turningMotor.setNeutralMode(NeutralMode.Coast);
-      m_backLeft.m_turningMotor.setNeutralMode(NeutralMode.Coast);
-  
-      m_frontRight.m_driveMotor.setNeutralMode(NeutralMode.Coast);
-      m_backRight.m_driveMotor.setNeutralMode(NeutralMode.Coast);
-      m_frontLeft.m_driveMotor.setNeutralMode(NeutralMode.Coast);
-      m_backLeft.m_driveMotor.setNeutralMode(NeutralMode.Coast);
-    } else {
-      m_frontRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-      m_backRight.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-      m_frontLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
-      m_backLeft.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+      m_frontRight.checkUserButton();
+      m_backRight.checkUserButton();
+      m_frontLeft.checkUserButton();
+      m_backLeft.checkUserButton();
+   }
 
-      m_frontRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-      m_backRight.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-      m_frontLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-      m_backLeft.m_driveMotor.setNeutralMode(NeutralMode.Brake);
-    }
+   public void updateDashboard(){
+    m_frontRight.updateSmartDashboard();
+    m_backRight.updateSmartDashboard();
+    m_frontLeft.updateSmartDashboard();
+    m_backLeft.updateSmartDashboard();
    }
 
 }
