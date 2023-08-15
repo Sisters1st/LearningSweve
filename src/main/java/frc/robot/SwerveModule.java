@@ -32,7 +32,7 @@ public class SwerveModule {
   public final TalonSRX m_turningMotor;
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final PIDController m_drivePIDController = new PIDController(.01, 0, 0);
+  private final PIDController m_drivePIDController = new PIDController(.1, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final ProfiledPIDController m_turningPIDController =
@@ -45,7 +45,7 @@ public class SwerveModule {
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 0.5);
-  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(0.1, 0.05);
+  //private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(0.1, 0.05);
 
   private final double rawTickToDegreesRatio = 360.0/1656.666;
   public final double rawAnalogToDegreesRatio = 360.0/1024.0;
@@ -54,6 +54,9 @@ public class SwerveModule {
   public double analogOffsetDeg = -1;
   public String name = "noName";
   public double turnOffset = -1;
+  public double drivingTicksPerRotToRotations = 1/(256*2*16*6.666);
+  public double drivingTicksPer100MsToRotationsPerSecond = 1/(10*256*2*16*6.666);
+  public double drivingRotationsPerMeter = (0.1016 * Math.PI);
 
 
   /**
@@ -79,7 +82,7 @@ public class SwerveModule {
   public SwerveModuleState getState() {
    
     return new SwerveModuleState(
-        m_driveMotor.getSelectedSensorVelocity(), new Rotation2d(this.getTurningMotorPosition()));
+        getDriveVelocityMPS(), new Rotation2d(this.getTurningMotorPosition()));
   }
 
   /**
@@ -89,7 +92,7 @@ public class SwerveModule {
    */
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(
-        m_driveMotor.getSelectedSensorPosition(), new Rotation2d(this.getTurningMotorPosition()));
+        getDriveDistMeters(), new Rotation2d(this.getTurningMotorPosition()));
   }
 
   /**
@@ -102,10 +105,11 @@ public class SwerveModule {
     SwerveModuleState state =
         SwerveModuleState.optimize(desiredState, new Rotation2d(Math.toRadians(this.getTurningMotorPosition())));
     SmartDashboard.putNumber(name + "Desired Ang", state.angle.getDegrees());
+    SmartDashboard.putNumber(name + "Desired Velo", state.speedMetersPerSecond);
 
     // Calculate the drive output from the drive PID controller.
     final double driveOutput =
-        m_drivePIDController.calculate(m_driveMotor.getSelectedSensorVelocity(), state.speedMetersPerSecond);
+        m_drivePIDController.calculate(getDriveVelocityMPS(), state.speedMetersPerSecond);
 
     final double driveFeedforward = m_driveFeedforward.calculate(state.speedMetersPerSecond);
 
@@ -113,10 +117,10 @@ public class SwerveModule {
     final double turnOutput =
         m_turningPIDController.calculate(Math.toRadians(this.getTurningMotorPosition()), state.angle.getRadians());
 
-    final double turnFeedforward =
-        m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
+    //final double turnFeedforward =
+     //   m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
-    m_driveMotor.set(ControlMode.PercentOutput, driveOutput + driveFeedforward);
+    m_driveMotor.set(ControlMode.PercentOutput, driveOutput);// + driveFeedforward);
     m_turningMotor.set(ControlMode.PercentOutput, (turnOutput));// + turnFeedforward));
   }
 
@@ -129,6 +133,8 @@ public class SwerveModule {
   }
 
   public void initModule(){
+    m_driveMotor.setSelectedSensorPosition(0);
+
     m_turningMotor.setNeutralMode(NeutralMode.Brake);
     m_driveMotor.setNeutralMode(NeutralMode.Brake);
     m_turningMotor.configFeedbackNotContinuous(true, 0);
@@ -171,5 +177,21 @@ public class SwerveModule {
     SmartDashboard.putNumber(name + "Raw Pos", m_turningMotor.getSelectedSensorPosition());
     SmartDashboard.putNumber(name + "Calculated Pos", getTurningMotorPosition());
     SmartDashboard.putNumber(name + "Raw Velocity",m_driveMotor.getSelectedSensorVelocity());
+    SmartDashboard.putNumber(name + "Drive Dist", getDriveDistMeters());
+    SmartDashboard.putNumber(name + "Drive Rots", getDriveRotations());
+    SmartDashboard.putNumber(name + "Drive MPS", getDriveVelocityMPS());
+
   }
-}
+
+  public double getDriveVelocityMPS(){
+    return m_driveMotor.getSelectedSensorVelocity() * drivingTicksPer100MsToRotationsPerSecond * drivingRotationsPerMeter;
+  }
+
+  public double getDriveDistMeters(){
+    return m_driveMotor.getSelectedSensorPosition() * drivingTicksPerRotToRotations * drivingRotationsPerMeter;
+  }
+
+  public double getDriveRotations(){
+    return m_driveMotor.getSelectedSensorPosition() * drivingTicksPerRotToRotations;
+  }
+} 
