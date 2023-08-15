@@ -32,14 +32,14 @@ public class SwerveModule {
   public final TalonSRX m_turningMotor;
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final PIDController m_drivePIDController = new PIDController(.1, 0, 0);
+  private final PIDController m_drivePIDController = new PIDController(0.5, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final ProfiledPIDController m_turningPIDController =
       new ProfiledPIDController(
           2,
-          0.001,
-          0.01,
+          0,
+          0,
           new TrapezoidProfile.Constraints(
               kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
 
@@ -57,6 +57,7 @@ public class SwerveModule {
   public double drivingTicksPerRotToRotations = 1/(256*2*16*6.666);
   public double drivingTicksPer100MsToRotationsPerSecond = 1/(10*256*2*16*6.666);
   public double drivingRotationsPerMeter = (0.1016 * Math.PI);
+  public double driveOffset = 1;
 
 
   /**
@@ -120,7 +121,7 @@ public class SwerveModule {
     //final double turnFeedforward =
      //   m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
-    m_driveMotor.set(ControlMode.PercentOutput, driveOutput);// + driveFeedforward);
+    m_driveMotor.set(ControlMode.PercentOutput, driveOffset * driveOutput);// + driveFeedforward);
     m_turningMotor.set(ControlMode.PercentOutput, (turnOutput));// + turnFeedforward));
   }
 
@@ -184,14 +185,14 @@ public class SwerveModule {
   }
 
   public double getDriveVelocityMPS(){
-    return m_driveMotor.getSelectedSensorVelocity() * drivingTicksPer100MsToRotationsPerSecond * drivingRotationsPerMeter;
+    return driveOffset * m_driveMotor.getSelectedSensorVelocity() * drivingTicksPer100MsToRotationsPerSecond * drivingRotationsPerMeter;
   }
 
   public double getDriveDistMeters(){
-    return m_driveMotor.getSelectedSensorPosition() * drivingTicksPerRotToRotations * drivingRotationsPerMeter;
+    return driveOffset * m_driveMotor.getSelectedSensorPosition() * drivingTicksPerRotToRotations * drivingRotationsPerMeter;
   }
 
   public double getDriveRotations(){
-    return m_driveMotor.getSelectedSensorPosition() * drivingTicksPerRotToRotations;
+    return driveOffset * m_driveMotor.getSelectedSensorPosition() * drivingTicksPerRotToRotations;
   }
 } 

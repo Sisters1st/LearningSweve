@@ -105,9 +105,14 @@ public class Drivetrain {
     m_backRight.name = "BackRight";
 
     m_frontRight.turnOffset = -48;
-    m_frontLeft.turnOffset = -54;
-    m_backLeft.turnOffset = -122;
+    m_frontLeft.turnOffset = -66;
+    m_backLeft.turnOffset = -119;
     m_backRight.turnOffset = 111;
+
+    m_backLeft.driveOffset = -1;
+    m_frontLeft.driveOffset = -1;
+    m_backRight.driveOffset = 1;
+    m_backLeft.driveOffset = 1;
 
     m_frontRight.initModule();
     m_backRight.initModule();
