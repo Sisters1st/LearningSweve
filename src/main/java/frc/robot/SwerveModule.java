@@ -165,7 +165,7 @@ public class SwerveModule {
   }
 
   public void checkUserButton(){
-    if(!RobotController.getUserButton()){
+    if(RobotController.getUserButton()){
       m_turningMotor.setNeutralMode(NeutralMode.Coast);
       m_driveMotor.setNeutralMode(NeutralMode.Coast);
     } else {

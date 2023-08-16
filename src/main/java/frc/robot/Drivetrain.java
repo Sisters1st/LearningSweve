@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import com.kauailabs.navx.frc.AHRS;
+
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -13,6 +15,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.SerialPort.Port;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
@@ -29,7 +33,7 @@ public class Drivetrain {
   public final SwerveModule m_backLeft = new SwerveModule(2, 6);
   public final SwerveModule m_backRight = new SwerveModule(3, 8);
 
-  private final AnalogGyro m_gyro = new AnalogGyro(0);
+  private final AHRS m_gyro = new AHRS(Port.kMXP);
 
   private final SwerveDriveKinematics m_kinematics =
       new SwerveDriveKinematics(
@@ -145,6 +149,8 @@ public class Drivetrain {
     m_backRight.updateSmartDashboard();
     m_frontLeft.updateSmartDashboard();
     m_backLeft.updateSmartDashboard();
+    SmartDashboard.putNumber("Gyro", m_gyro.getRotation2d().getDegrees());
+    
    }
 
 }
