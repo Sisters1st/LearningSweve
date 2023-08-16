@@ -35,13 +35,11 @@ public class SwerveModule {
   private final PIDController m_drivePIDController = new PIDController(0.5, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final ProfiledPIDController m_turningPIDController =
-      new ProfiledPIDController(
-          2,
+  private final PIDController m_turningPIDController =
+      new PIDController(
+          1,
           0,
-          0,
-          new TrapezoidProfile.Constraints(
-              kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
+          0);
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 0.5);
@@ -160,8 +158,9 @@ public class SwerveModule {
 
     initQuadPosition = -m_turningMotor.getSelectedSensorPosition();
     SmartDashboard.putNumber(name + " Init Quad", initQuadPosition);
+
     rawAnalogToDegreesRatio = 360 / (maxAnalog - minAnalog);
-    analogOffsetDeg = (initAnalogPos * rawAnalogToDegreesRatio) + turnOffsetDeg;
+    analogOffsetDeg = ((initAnalogPos - minAnalog) * rawAnalogToDegreesRatio) + turnOffsetDeg;
     SmartDashboard.putNumber(name + " Analog Deg", analogOffsetDeg);
   }
 
