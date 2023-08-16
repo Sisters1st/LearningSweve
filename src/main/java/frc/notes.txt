@@ -1,2 +1,30 @@
-front right + power + encoder turns left
+front right turn
+ + power + quad encoder turns left
+ + power analog counts down range (10 to 867) turning left goes from 867 down to 10
 
+ front right drive
+ + power + quad encoder moves forward when gears on inside
+
+ front left turn
+ + power + quad turns left
+ + power analog counts down range (10 to 872) turning left goes from 867 down to 10
+
+ front left drive
+ + power + quad encoder moves backwards when gears on inside
+
+
+
+
+ back right turn
+ + power + quad encoder turns left
+ + power analog counts down range (10 to 864) turning left goes from 867 down to 10
+
+ back right drive
+ + power + quad encoder moves forward when gears on inside
+
+ back left turn
+ + power + quad turns left
+ + power analog counts down range (11 to 866) turning left goes from 867 down to 10
+
+ back left drive
+ + power + quad encoder moves backwards when gears on inside

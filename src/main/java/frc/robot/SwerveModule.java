@@ -47,18 +47,19 @@ public class SwerveModule {
   private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 0.5);
   //private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(0.1, 0.05);
 
-  private final double rawTickToDegreesRatio = 360.0/1656.666;
-  public final double rawAnalogToDegreesRatio = 360.0/1024.0;
+  public double rawTickToDegreesRatio = 360.0/1656.666;
+  public double rawAnalogToDegreesRatio = 360.0/1024.0;
   public double initQuadPosition = -1;
   public double initAnalogPos = -1;
   public double analogOffsetDeg = -1;
   public String name = "noName";
-  public double turnOffset = -1;
+  public double turnOffsetDeg = -1;
   public double drivingTicksPerRotToRotations = 1/(256*2*16*6.666);
   public double drivingTicksPer100MsToRotationsPerSecond = 1/(10*256*2*16*6.666);
   public double drivingRotationsPerMeter = (0.1016 * Math.PI);
-  public double driveOffset = 1;
-
+  public double driveMult = 1;
+  public double minAnalog = -1;
+  public double maxAnalog = -1;
 
   /**
    * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
@@ -121,7 +122,7 @@ public class SwerveModule {
     //final double turnFeedforward =
      //   m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
-    m_driveMotor.set(ControlMode.PercentOutput, driveOffset * driveOutput);// + driveFeedforward);
+    m_driveMotor.set(ControlMode.PercentOutput, driveMult * driveOutput);// + driveFeedforward);
     m_turningMotor.set(ControlMode.PercentOutput, (turnOutput));// + turnFeedforward));
   }
 
@@ -159,8 +160,8 @@ public class SwerveModule {
 
     initQuadPosition = -m_turningMotor.getSelectedSensorPosition();
     SmartDashboard.putNumber(name + " Init Quad", initQuadPosition);
-
-    analogOffsetDeg = (initAnalogPos * rawAnalogToDegreesRatio) + turnOffset;
+    rawAnalogToDegreesRatio = 360 / (maxAnalog - minAnalog);
+    analogOffsetDeg = (initAnalogPos * rawAnalogToDegreesRatio) + turnOffsetDeg;
     SmartDashboard.putNumber(name + " Analog Deg", analogOffsetDeg);
   }
 
@@ -185,14 +186,14 @@ public class SwerveModule {
   }
 
   public double getDriveVelocityMPS(){
-    return driveOffset * m_driveMotor.getSelectedSensorVelocity() * drivingTicksPer100MsToRotationsPerSecond * drivingRotationsPerMeter;
+    return driveMult * m_driveMotor.getSelectedSensorVelocity() * drivingTicksPer100MsToRotationsPerSecond * drivingRotationsPerMeter;
   }
 
   public double getDriveDistMeters(){
-    return driveOffset * m_driveMotor.getSelectedSensorPosition() * drivingTicksPerRotToRotations * drivingRotationsPerMeter;
+    return driveMult * m_driveMotor.getSelectedSensorPosition() * drivingTicksPerRotToRotations * drivingRotationsPerMeter;
   }
 
   public double getDriveRotations(){
-    return driveOffset * m_driveMotor.getSelectedSensorPosition() * drivingTicksPerRotToRotations;
+    return driveMult * m_driveMotor.getSelectedSensorPosition() * drivingTicksPerRotToRotations;
   }
 } 

@@ -104,15 +104,28 @@ public class Drivetrain {
     m_backLeft.name = "BackLeft";
     m_backRight.name = "BackRight";
 
-    m_frontRight.turnOffset = -48;
-    m_frontLeft.turnOffset = -66;
-    m_backLeft.turnOffset = -119;
-    m_backRight.turnOffset = 111;
+    m_frontRight.turnOffsetDeg = 0;
+    m_frontLeft.turnOffsetDeg = 0;
+    m_backLeft.turnOffsetDeg = 0;
+    m_backRight.turnOffsetDeg = 0;
 
-    m_backLeft.driveOffset = -1;
-    m_frontLeft.driveOffset = -1;
-    m_backRight.driveOffset = 1;
-    m_backLeft.driveOffset = 1;
+    m_backLeft.driveMult = -1;
+    m_frontLeft.driveMult = -1;
+    m_backRight.driveMult = 1;
+    m_backLeft.driveMult = 1;
+
+    m_frontRight.minAnalog = 10;
+    m_frontRight.maxAnalog = 867;
+    
+    m_frontLeft.minAnalog = 10;
+    m_frontLeft.maxAnalog = 872;
+    
+    m_backRight.minAnalog = 10;
+    m_backRight.maxAnalog = 864;
+    
+    m_backLeft.minAnalog = 11;
+    m_backLeft.maxAnalog = 866;
+
 
     m_frontRight.initModule();
     m_backRight.initModule();
